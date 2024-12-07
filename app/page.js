@@ -4,20 +4,21 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Placeholder data for demonstration
@@ -52,6 +53,9 @@ const placeholderStocks = [
 ];
 
 export default function StockAnalysisSystem() {
+  const [stocks, setStocks] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState("");
   const [marketCap, setMarketCap] = useState("");
   const [volume, setVolume] = useState("");
@@ -59,14 +63,44 @@ export default function StockAnalysisSystem() {
   const [industry, setIndustry] = useState("");
   const [country, setCountry] = useState("");
 
-  const handleSearch = () => {
-    console.log("Searching for:", query, "with filters:", {
-      marketCap,
-      volume,
-      sector,
-      industry,
-      country,
-    });
+  // Function to handle searching Pinecone database upon entering query
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/search-stocks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query,
+          filters: {
+            marketCap,
+            volume,
+            sector,
+            industry,
+            country,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to search stocks");
+      }
+
+      const searchResults = await response.json();
+      setStocks(searchResults);
+    } catch (error) {
+      console.error("Error searching stocks:", error);
+      setError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -77,19 +111,34 @@ export default function StockAnalysisSystem() {
         </CardHeader>
         <CardContent className="bg-white pt-6">
           <div className="flex flex-col space-y-4">
-            <label
-              htmlFor="query-input"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Query
-            </label>
-            <Input
-              id="query-input"
-              placeholder="Enter your natural language query (e.g., 'Companies that build data centers')"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-none"
-            />
+            <div className="flex flex-col space-y-1">
+              <label
+                htmlFor="search-query"
+                className="text-emerald-700 text-sm font-medium"
+              >
+                Search
+              </label>
+              <div className="flex items-center space-x-2">
+                <Input
+                  id="query-input"
+                  placeholder="Enter your natural language query (e.g., 'Companies that build data centers')"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSearch(e);
+                    }
+                  }}
+                  className="border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500 rounded-none"
+                />
+                <Button
+                  onClick={handleSearch}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-none"
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-4">
               <Select value={marketCap} onValueChange={setMarketCap}>
                 <SelectTrigger className="w-[180px] border-emerald-300 focus:ring-emerald-500 rounded-none">
@@ -144,11 +193,8 @@ export default function StockAnalysisSystem() {
                   <SelectItem value="germany">Germany</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                onClick={handleSearch}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-none"
-              >
-                Search
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-none">
+                Filter
               </Button>
             </div>
           </div>
@@ -160,32 +206,51 @@ export default function StockAnalysisSystem() {
           <CardTitle className="text-white">Results</CardTitle>
         </CardHeader>
         <CardContent className="bg-white">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-emerald-100">
-                <TableHead className="text-emerald-900">Symbol</TableHead>
-                <TableHead className="text-emerald-900">Name</TableHead>
-                <TableHead className="text-emerald-900">Sector</TableHead>
-                <TableHead className="text-emerald-900">Industry</TableHead>
-                <TableHead className="text-emerald-900">Market Cap</TableHead>
-                <TableHead className="text-emerald-900">Volume</TableHead>
-                <TableHead className="text-emerald-900">Country</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {placeholderStocks.map((stock) => (
-                <TableRow key={stock.symbol} className="hover:bg-emerald-50">
-                  <TableCell className="font-medium">{stock.symbol}</TableCell>
-                  <TableCell>{stock.name}</TableCell>
-                  <TableCell>{stock.sector}</TableCell>
-                  <TableCell>{stock.industry}</TableCell>
-                  <TableCell>{stock.marketCap}</TableCell>
-                  <TableCell>{stock.volume}</TableCell>
-                  <TableCell>{stock.country}</TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-28">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-emerald-500 mr-3"></div>
+              <span className="text-emerald-700 font-semibold ">
+                Loading...
+              </span>
+            </div>
+          ) : error ? (
+            <div className="text-red-500 p-4 text-center">
+              {error || "An error occurred while searching stocks"}
+            </div>
+          ) : stocks.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-emerald-100">
+                  <TableHead className="text-emerald-900">Symbol</TableHead>
+                  <TableHead className="text-emerald-900">Name</TableHead>
+                  <TableHead className="text-emerald-900">Sector</TableHead>
+                  <TableHead className="text-emerald-900">Industry</TableHead>
+                  <TableHead className="text-emerald-900">Market Cap</TableHead>
+                  <TableHead className="text-emerald-900">Volume</TableHead>
+                  <TableHead className="text-emerald-900">Country</TableHead>
+                  <TableHead className="text-emerald-900">Similarity</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {stocks.map((stock, index) => (
+                  <TableRow key={index} className="hover:bg-emerald-50">
+                    <TableCell>{stock.symbol}</TableCell>
+                    <TableCell>{stock.name}</TableCell>
+                    <TableCell>{stock.sector}</TableCell>
+                    <TableCell>{stock.industry}</TableCell>
+                    <TableCell>{stock.marketCap}</TableCell>
+                    <TableCell>{stock.volume}</TableCell>
+                    <TableCell>{stock.country}</TableCell>
+                    <TableCell>{stock.similarityScore}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-gray-500 p-28 text-center">
+              No stocks found. Try a different search query.
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
