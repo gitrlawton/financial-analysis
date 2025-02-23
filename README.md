@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Financial Analysis System
 
-## Getting Started
+## Overview
 
-First, run the development server:
+This project is a web application that allows users to perform stock analysis by searching for stocks using natural language queries. The application utilizes OpenAI's embedding model for semantic search and Pinecone for efficient vector storage and retrieval. Users can filter results based on various criteria such as market capitalization, volume, sector, industry, and country.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Natural Language Search**: Users can enter queries in natural language to find relevant stocks.
+- **Semantic Search**: The application uses OpenAI's embeddings to perform semantic searches, providing more relevant results.
+- **Filtering Options**: Users can filter search results based on market cap, volume, sector, industry, and country.
+- **Dynamic Results Display**: The application displays search results in a user-friendly table format, showing key stock information.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+To set up the project, ensure you have Node.js and npm installed on your machine. Then, follow these steps:
 
-## Learn More
+1. Clone the repository:
 
-To learn more about Next.js, take a look at the following resources:
+   ```
+   git clone <repository-url>
+   cd <repository-directory>
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Install the required packages:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```
+   npm install
+   ```
 
-## Deploy on Vercel
+3. Create a `.env` file in the root directory and add your API keys:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   PINECONE_API_KEY=your_pinecone_api_key
+   PINECONE_INDEX=your_pinecone_index
+   GROQ_API_KEY=your_groq_api_key
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Ensure you have the `nyse_stocks.json` file in the root directory, containing the list of stock symbols.
+
+## Usage
+
+1. Start the development server:
+
+   ```
+   npm run dev
+   ```
+
+2. Open your web browser and navigate to `http://localhost:3000`.
+
+3. Enter a natural language query in the search bar to find stocks.
+
+4. Use the filtering options to refine your search results.
+
+5. View the analysis results displayed in a table format.
+
+## File Descriptions
+
+- **app/api/search-stocks/route.js**: The server-side code handling stock search requests and returning formatted results.
+- **app/page.js**: The main React component for the front-end, managing user interactions and displaying search results.
+- **lib/embeddingService.js**: Contains functions for generating embeddings and interacting with Pinecone for stock storage and retrieval.
+- **lib/stockService.js**: Provides functions for fetching stock details from Yahoo Finance.
+- **scripts/indexMultipleStocks.js**: A script for indexing multiple stocks into Pinecone.
+- **scripts/storePineconeStock.js**: A script for storing individual stock details and embeddings in Pinecone.
+- **scripts/searchPineconeStocks.js**: A script for searching stocks in Pinecone based on a query.
+
+## Dependencies
+
+- **Next.js**: For building the web application and handling server-side rendering.
+- **OpenAI**: For generating embeddings for stock queries.
+- **Pinecone**: For vector storage and retrieval of stock embeddings.
+- **Yahoo Finance API**: For fetching stock details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
